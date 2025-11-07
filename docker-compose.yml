@@ -1,0 +1,72 @@
+# ~/deploy/docker-compose.yml
+services:
+  # Бэкенд (используем существующую конфигурацию)
+  armnavigation:
+    build: ../arm-navigation
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - POSTGRES_CONNECTION_STRING=Host=postgres;Port=5432;User Id=admin;Password=admin;Database=ArmNavigation;SearchPath=arm_navigation_schema;Include Error Detail=true
+      - DATABASE=postgres
+      - RABBITMQ_CONNECTION_STRING=amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - hackathon_net
+
+  # Фронтенд
+  frontend:
+    build: ../frontend
+    ports:
+      - "4173:80"
+    depends_on:
+      - armnavigation
+    networks:
+      - hackathon_net
+
+  # Инфраструктура (как у бэкенда)
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ArmNavigation
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hackathon_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d ArmNavigation"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - hackathon_net
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  hackathon_net:
+    driver: bridge
