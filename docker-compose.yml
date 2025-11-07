@@ -2,7 +2,9 @@
 services:
   # Бэкенд (используем существующую конфигурацию)
   armnavigation:
-    build: ../arm-navigation
+    build:
+      context: ../arm-navigation
+      dockerfile: Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
