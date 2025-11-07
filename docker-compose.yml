@@ -1,3 +1,4 @@
+# Auto-deploy test
 # ~/deploy/docker-compose.yml
 services:
   # Бэкенд (используем существующую конфигурацию)
